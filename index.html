@@ -112,6 +112,7 @@
   #lp-table td{padding:12px 6px; border-bottom:1px solid var(--line); color:var(--ink); vertical-align:top;}
   #lp-table tr:last-child td{border-bottom:none;}
   #lp-table td.cycle{font-weight:700; color:var(--accent-deep); white-space:nowrap;}
+  .promo-hl{background:#FFE066; color:#5A4200; font-weight:800; padding:1px 5px; border-radius:5px;}
   .lp-empty{font-size:12px; color:var(--ink-soft); line-height:1.6;}
   #lightbox-close{position:absolute; top:24px; right:28px; width:40px; height:40px; border-radius:50%; border:none; background:rgba(255,255,255,0.15); color:#fff; font-size:18px; cursor:pointer; z-index:2;}
   #lightbox-close:hover{background:rgba(255,255,255,0.28);}
@@ -416,6 +417,12 @@ function selectProduct(name){
   });
 }
 
+function highlightPromo(text){
+  if(!text) return "-";
+  // "1+1", "2+1" 같은 증정/프로모션 표기를 노란색으로 강조
+  return text.replace(/(\d+\s*\+\s*\d+)/g, '<span class="promo-hl">$1</span>');
+}
+
 function fmtPriceStr(price){
   if(!price) return "가격 문의";
   return price.split("/").map(p=>{
@@ -444,7 +451,7 @@ function openLightbox(url, productName){
         <td class="cycle">${v.cycle || "-"}</td>
         <td>${v.diameter ? v.diameter+"mm" : "-"}</td>
         <td>${fmtPriceStr(v.price)}</td>
-        <td>${v.pack || "-"}</td>
+        <td>${highlightPromo(v.pack)}</td>
       </tr>`).join("");
     wrap.innerHTML = `
       <table id="lp-table">
