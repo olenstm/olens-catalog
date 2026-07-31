@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>교육용자료 카탈로그</title>
+<style>
+  :root{
+    --bg:#FAF7F5; --ink:#2A2523; --ink-soft:#7A716C; --line:#E9E1DC;
+    --accent:#C4707A; --accent-deep:#8F4A56; --accent-soft:#F2DCDF;
+    --panel:#FFFFFF; --lens:#B9CFE0;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%;}
+  body{
+    font-family:"Pretendard","Apple SD Gothic Neo","Malgun Gothic",-apple-system,sans-serif;
+    background:var(--bg); color:var(--ink); overflow:hidden;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #app{display:flex; height:100vh; width:100vw;}
+
+  #sidebar{width:76px; min-width:76px; background:#FFFFFF; border-right:1px solid var(--line); display:flex; flex-direction:column; align-items:center; padding-top:20px;}
+  #sidebar .edu-note{font-size:8.5px; color:#B3413C; text-align:center; line-height:1.5; font-weight:700; margin-bottom:4px;}
+  #sidebar .edu-ver{margin-top:auto; margin-bottom:14px; font-size:8px; color:#B9AEA7; text-align:center; letter-spacing:.5px; line-height:1.6;}
+  #sidebar .edu-badge{writing-mode:horizontal-tb; font-size:14px; font-weight:800; color:#B3413C; background:#FDF0EE; border:1.5px solid #E3B7B2; border-radius:10px; padding:8px 6px; text-align:center; line-height:1.35; letter-spacing:1px; margin-bottom:6px;}
+
+  #sync-status{display:none !important; margin-top:auto; font-size:9px; color:var(--ink-soft); display:flex; flex-direction:column; align-items:center; gap:4px; padding:0 6px; text-align:center;}
+  #sync-status2{display:none !important; margin-bottom:16px; font-size:9px; color:var(--ink-soft); display:flex; flex-direction:column; align-items:center; gap:4px; padding:0 6px; text-align:center;}
+  #sync-status .dot, #sync-status2 .dot{width:7px; height:7px; border-radius:50%; background:#C9C0BB;}
+  #sync-status.ok .dot, #sync-status2.ok .dot{background:#6FAE7F;}
+  #sync-status.err .dot, #sync-status2.err .dot{background:#C4707A;}
+
+  #main{flex:1; display:flex; overflow:hidden;}
+
+  #list-col{width:300px; min-width:260px; display:flex; flex-direction:column; overflow:hidden; border-right:1px solid var(--line);}
+
+  /* ---------- 제품 배지 & 착용 연예인 ---------- */
+  .pbadge{display:inline-flex; align-items:center; gap:1px; font-size:8px; font-weight:800; padding:1px 5px; border-radius:999px; margin-right:5px; letter-spacing:.2px; white-space:nowrap; vertical-align:middle; line-height:1.5;}
+  .pbadge.b-hot{background:linear-gradient(135deg,#FF5F45,#FF2D55); color:#fff;}
+  .pbadge.b-best{background:linear-gradient(135deg,#FFB300,#FF8F00); color:#fff;}
+  .pbadge.b-soon{background:#3A3A3C; color:#FFD8D3; border:1px solid #FF6B5E;}
+  .pbadge.b-new{background:linear-gradient(135deg,#00C7B1,#0090C9); color:#fff;}
+  .pbadge.b-limited{background:linear-gradient(135deg,#7B4DBF,#4A2E8C); color:#fff;}
+  .pbadge.b-pick{background:linear-gradient(135deg,#FF7AA2,#E84393); color:#fff;}
+  .pbadge.b-daily{background:linear-gradient(135deg,#A8C686,#6B9E4F); color:#fff;}
+  .pbadge.b-point{background:linear-gradient(135deg,#5A4FCF,#8E44AD); color:#fff;}
+  .pbadge.b-restock{background:linear-gradient(135deg,#26A69A,#00796B); color:#fff;}
+  .pbadge.b-etc{background:#EDEAE7; color:#6B6058; border:1px solid #D8D2CC;}
+  .worn-by{font-size:9.5px; color:var(--ink-soft, #9C8F88); font-weight:500; margin-top:2px; white-space:nowrap;}
+
+  /* ---------- 보기 모드 탭 (연예인별 / 제품별) ---------- */
+  #mode-tabs{display:flex; border-bottom:1px solid var(--line);}
+  .mode-btn{flex:1; padding:13px 0; text-align:center; font-size:12.5px; font-weight:700; color:var(--ink-soft); background:var(--panel); border:none; cursor:pointer; border-bottom:2.5px solid transparent;}
+  .mode-btn.active{color:var(--accent-deep); border-bottom-color:var(--accent); background:var(--accent-soft);}
+
+  #topbar{padding:14px 20px 12px; border-bottom:1px solid var(--line);}
+  #topbar h1{font-size:15px; font-weight:700; margin-bottom:8px;}
+  #search{width:100%; padding:9px 14px; border-radius:18px; border:1px solid var(--line); font-size:12.5px; background:var(--bg); color:var(--ink); outline:none;}
+  #search:focus{border-color:var(--accent);}
+  #count{font-size:11px; color:var(--ink-soft); margin-top:6px; display:block;}
+
+  #grid{flex:1; overflow-y:auto; padding:10px 20px 40px; display:flex; flex-direction:column; gap:0;}
+  .row{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:9px 12px; background:var(--panel);
+    border:1px solid var(--line); border-bottom:none;
+    cursor:pointer; transition:background .12s ease;
+  }
+  .row:first-child{border-radius:8px 8px 0 0;}
+  .row:last-child{border-bottom:1px solid var(--line); border-radius:0 0 8px 8px;}
+  .row:only-child{border-radius:8px;}
+  .row:hover{background:var(--accent-soft);}
+  .row.selected{background:var(--accent-soft); border-color:var(--accent);}
+  .row .names{display:flex; flex-direction:column;}
+  .row .names .prow{display:flex; flex-direction:row; align-items:center; flex-wrap:wrap; row-gap:2px;}
+  .row .group{font-size:9px; color:var(--ink-soft);}
+  .row .member{font-size:12.5px; font-weight:700; color:var(--ink);}
+  .row .rmeta{display:flex; align-items:center; gap:5px;}
+  .row .ccount{font-size:8.5px; color:var(--ink-soft);}
+  .row .arrow{font-size:10px; color:var(--ink-soft);}
+  #empty{padding:60px 20px; text-align:center; color:var(--ink-soft); font-size:13px;}
+
+  #detail-col{flex:1; overflow-y:auto; padding:26px 34px 60px;}
+  #detail-empty{height:100%; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:10px; color:var(--ink-soft); font-size:13px; text-align:center;}
+  #detail-empty .big{font-size:32px; opacity:0.4;}
+
+  #detail-head{margin-bottom:22px;}
+  #detail-head .eyebrow{font-size:12.5px; color:var(--accent-deep); font-weight:700;}
+  #detail-head .title{font-size:22px; font-weight:800; margin-top:2px;}
+  #detail-head .pmeta{font-size:12px; color:var(--ink-soft); margin-top:6px;}
+
+  #usage-notice{
+    margin-top:14px; padding:10px 14px; border-radius:10px;
+    background:var(--accent-soft); border:1px solid #E7BFC4;
+    color:var(--accent-deep); font-size:11px; line-height:1.5;
+  }
+
+  .photo-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(160px,1fr)); gap:14px;}
+  .photo-card{display:flex; flex-direction:column; gap:6px;}
+  .photo-slot{aspect-ratio:3/4; border-radius:14px; overflow:hidden; cursor:zoom-in; background:repeating-linear-gradient(135deg, var(--accent-soft), var(--accent-soft) 10px, #fff 10px, #fff 20px); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; color:var(--accent-deep); font-size:11px; font-weight:600; border:1.5px dashed #D9AEB4;}
+  .photo-slot.has-photo{border:1px solid var(--line);}
+  .photo-slot img{width:100%; height:100%; object-fit:cover; transition:transform .2s ease;}
+  .photo-slot.has-photo:hover img{transform:scale(1.04);}
+  .photo-caption{font-size:11.5px; font-weight:600; color:var(--ink); text-align:center;}
+  .photo-caption .sub{display:block; font-size:10px; color:var(--ink-soft); font-weight:400; margin-top:1px;}
+
+  #lightbox{position:fixed; inset:0; background:rgba(15,10,10,0.92); display:none; align-items:center; justify-content:center; z-index:100; padding:30px;}
+  #lightbox.open{display:flex;}
+  #lightbox-inner{display:flex; align-items:stretch; gap:0; max-width:1100px; max-height:88vh; width:100%; background:#111; border-radius:16px; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,0.5);}
+  #lightbox-img-wrap{flex:1; display:flex; align-items:center; justify-content:center; background:#0d0d0d; min-width:0; cursor:zoom-out;}
+  #lightbox-img-wrap img{max-width:100%; max-height:88vh; object-fit:contain;}
+  #lightbox-panel{width:380px; min-width:280px; background:var(--panel); padding:26px 22px; display:flex; flex-direction:column; overflow-y:auto;}
+  #lightbox-panel .lp-label{font-size:11px; font-weight:700; color:var(--accent-deep); letter-spacing:0.5px; text-transform:uppercase; margin-bottom:8px;}
+  #lightbox-panel .lp-name{font-size:18px; font-weight:800; color:var(--ink); margin-bottom:18px; line-height:1.3;}
+  #lp-table{width:100%; border-collapse:collapse; font-size:15px;}
+  #lp-table th{text-align:left; font-size:12.5px; font-weight:700; color:var(--ink-soft); padding:0 6px 10px; border-bottom:1.5px solid var(--line);}
+  #lp-table td{padding:12px 6px; border-bottom:1px solid var(--line); color:var(--ink); vertical-align:top;}
+  #lp-table tr:last-child td{border-bottom:none;}
+  #lp-table td.cycle{font-weight:700; color:var(--accent-deep); white-space:nowrap;}
+  .lp-empty{font-size:12px; color:var(--ink-soft); line-height:1.6;}
+  #lightbox-notice{margin-top:auto; padding-top:16px; border-top:1px solid var(--line); font-size:10.5px; line-height:1.5; color:var(--ink-soft);}
+  #lightbox-close{position:absolute; top:24px; right:28px; width:40px; height:40px; border-radius:50%; border:none; background:rgba(255,255,255,0.15); color:#fff; font-size:18px; cursor:pointer; z-index:2;}
+  #lightbox-close:hover{background:rgba(255,255,255,0.28);}
+
+  @media (max-width:720px){
+    #lightbox-inner{flex-direction:column; max-height:92vh;}
+    #lightbox-panel{width:100%; min-width:0;}
+    #lightbox-img-wrap img{max-height:45vh;}
+  }
+
+  @media (max-width:900px){
+    #main{flex-direction:column;}
+    #list-col{width:100%; min-width:0; max-height:42vh; border-right:none; border-bottom:1px solid var(--line);}
+    #detail-col{padding:20px;}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="sidebar">
+    <div class="edu-badge">교육용<br>자료</div>
+    <div class="edu-note">! 고객 안내시에는<br>구두로 안내</div>
+    <div id="sync-status"><span class="dot"></span><span id="sync-text">연결중</span></div>
+    <div id="sync-status2"><span class="dot"></span><span id="sync-text2">제품정보 연결중</span></div>
+    <div class="edu-ver">ver4<br>26.07.31</div>
+  </div>
+
+  <div id="main">
+    <div id="list-col">
+      <div id="mode-tabs">
+        <button class="mode-btn active" id="tab-product">제품별</button>
+        <button class="mode-btn" id="tab-celeb">연예인별</button>
+      </div>
+      <div id="topbar">
+        <h1 id="list-title">제품 (가나다순)</h1>
+        <input id="search" type="text" placeholder="제품명 검색">
+        <span id="count"></span>
+      </div>
+      <div id="grid"></div>
+    </div>
+
+    <div id="detail-col">
+      <div id="detail-empty">
+        <div class="big">👈</div>
+        <div>왼쪽에서 항목을 선택하면<br>여기에 사진이 표시됩니다</div>
+      </div>
+      <div id="detail-content" style="display:none;">
+        <div id="detail-head">
+          <div class="eyebrow" id="d-eyebrow"></div>
+          <div class="title" id="d-title"></div>
+          <div class="pmeta" id="d-meta"></div>
+          <div id="usage-notice">※ 본 이미지는 매장 참고자료입니다. 고객응대시에는 구두로만 안내 부탁드립니다.<br>매장 게시, SNS 업로드, 인쇄물 제작 등 목적 외 사용을 금지합니다.</div>
+        </div>
+        <div class="photo-grid" id="photo-grid"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="lightbox">
+  <button id="lightbox-close">✕</button>
+  <div id="lightbox-inner">
+    <div id="lightbox-img-wrap"><img id="lightbox-img" src=""></div>
+    <div id="lightbox-panel">
+      <div class="lp-label">제품 정보</div>
+      <div class="lp-name" id="lp-name"></div>
+      <div id="lp-variants"></div>
+      <div id="lightbox-notice">※ 본 이미지는 매장 참고자료입니다. 고객응대시에는 구두로만 안내 부탁드립니다.<br>매장 게시, SNS 업로드, 인쇄물 제작 등 목적 외 사용을 금지합니다.</div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* =========================================================
+   기본 연예인 목록 (그룹/멤버/폴더) — 새 폴더는 자동 추가됨
+   ========================================================= */
+const CELEBS = [{"group": "레드벨벳", "member": "슬기", "folder": "레드벨벳_슬기"}, {"group": "르세라핌", "member": "채원", "folder": "르세라핌_채원"}, {"group": "미야오", "member": "안나", "folder": "미야오_안나"}, {"group": "베이비몬스터", "member": "아사", "folder": "베이비몬스터_아사"}, {"group": "블랙핑크", "member": "로제", "folder": "블랙핑크_로제"}, {"group": "블랙핑크", "member": "제니", "folder": "블랙핑크_제니"}, {"group": "세이마이네임", "member": "준휘", "folder": "세이마이네임_준휘"}, {"group": "아이브", "member": "레이", "folder": "아이브_레이"}, {"group": "아이브", "member": "리즈", "folder": "아이브_리즈"}, {"group": "아이브", "member": "안유진", "folder": "아이브_안유진"}, {"group": "아이브", "member": "이서", "folder": "아이브_이서"}, {"group": "아이브", "member": "장원영", "folder": "아이브_장원영"}, {"group": "아일릿", "member": "민주", "folder": "아일릿_민주"}, {"group": "아일릿", "member": "원희", "folder": "아일릿_원희"}, {"group": "아일릿", "member": "이로하", "folder": "아일릿_이로하"}, {"group": "에스파", "member": "닝닝", "folder": "에스파_닝닝"}, {"group": "에스파", "member": "윈터", "folder": "에스파_윈터"}, {"group": "에스파", "member": "지젤", "folder": "에스파_지젤"}, {"group": "에스파", "member": "카리나", "folder": "에스파_카리나"}, {"group": "엔믹스", "member": "베이", "folder": "엔믹스_베이"}, {"group": "엔믹스", "member": "설윤", "folder": "엔믹스_설윤"}, {"group": "엔믹스", "member": "해원", "folder": "엔믹스_해원"}, {"group": "엔시티위시", "member": "시온", "folder": "엔시티위시_시온"}, {"group": "올데프", "member": "애니", "folder": "올데프_애니"}, {"group": "올데프", "member": "타잔", "folder": "올데프_타잔"}, {"group": "", "member": "이안", "folder": "이안"}, {"group": "이즈나", "member": "방지민", "folder": "이즈나_방지민"}, {"group": "키키", "member": "이솔", "folder": "키키_이솔"}, {"group": "트와이스", "member": "사나", "folder": "트와이스_사나"}, {"group": "트와이스", "member": "쯔위", "folder": "트와이스_쯔위"}, {"group": "하츠투하츠", "member": "지우", "folder": "하츠투하츠_지우"}];
+
+/* 157개 SKU 기준 제품정보(직경/가격/주기) — 사진 파일명과 매칭용 */
+let PRODUCT_INFO_MAP = {}; // 구글시트에서 실시간으로 채워짐
+
+/* 제품정보 구글시트 (웹에 게시된 CSV) */
+const PRODUCT_API_URL = "https://script.google.com/macros/s/AKfycbwSdJmnLZKoivzTCMe2Nfl6dcLUSfNsmjQ1zPvEvBtWLlEmSm4m9dAoG33iDhW3ZU8X/exec";
+
+/* 구글 앱스크립트 API — { 폴더명: [{id, name}] } 형태로 반환 */
+const API_URL = "https://script.google.com/macros/s/AKfycbywihJ0fPqonCHKEFkkXsjCTlCTLGqp--kL3l8Qd4lLtDzo0hu0MJTztBp4C-ex_6Y/exec";
+
+let mode = "product"; // "celeb" | "product"
+let query = "";
+let selectedKey = null;
+let PHOTO_MAP = {}; // { folder: [{id, name}] }
+let LIVE_CELEBS = CELEBS.slice();
+let PRODUCT_MAP = {}; // { productName: [{folder, photo:{id,name}}] }
+
+function driveThumb(id, size){ return `https://drive.google.com/thumbnail?id=${id}&sz=w${size}`; }
+
+function normalizeForMatch(s){
+  return (s || "")
+    .replace(/원데이/g, "")
+    .replace(/[\ufeff\u200b\u00a0\s]/g, "") // BOM, zero-width space, nbsp, 일반 공백 모두 제거
+    .trim();
+}
+/* 시트의 배지/착용연예인 컬럼 → 리스트 표기 (여러 행 중 첫 값 사용) */
+const BADGE_DEF = {
+  "인기":   {cls:"b-hot",  label:"인기↑"},
+  "베스트": {cls:"b-best", label:"BEST"},
+  "품절임박":{cls:"b-soon", label:"품절임박"},
+  "신제품": {cls:"b-new",  label:"NEW"},
+  "한정판": {cls:"b-limited", label:"한정판"},
+  "추천":   {cls:"b-pick",    label:"추천"},
+  "데일리": {cls:"b-daily",   label:"데일리"},
+  "포인트": {cls:"b-point",   label:"포인트"},
+  "재입고": {cls:"b-restock", label:"재입고"}
+};
+function normBadge(t){
+  t = (t||"").trim().toLowerCase();
+  if(!t) return null;
+  if(t==="인기"||t==="hot"||t==="인기제품") return "인기";
+  if(t==="베스트"||t==="best"||t==="베스트셀러") return "베스트";
+  if(t.includes("품절")) return "품절임박";
+  if(t==="신제품"||t==="new"||t==="신상") return "신제품";
+  if(t.includes("한정")||t==="limited") return "한정판";
+  if(t==="추천"||t==="pick"||t==="md추천") return "추천";
+  if(t==="데일리"||t==="daily") return "데일리";
+  if(t==="포인트"||t==="point") return "포인트";
+  if(t.includes("재입고")||t==="restock") return "재입고";
+  return (t||"").trim() ? "__custom__" : null;
+}
+function productExtras(name){
+  const variants = productInfoFor(name);
+  const out = {badges:[], celebs:[]};
+  if(!variants) return out;
+  for(const v of variants){
+    const rawB = v.badge || v["배지"] || "";
+    if(rawB && !out.badges.length){
+      rawB.split(/[,/·]/).forEach(t=>{
+        let k = normBadge(t);
+        if(k === "__custom__") k = t.trim();
+        if(k && !out.badges.includes(k)) out.badges.push(k);
+      });
+    }
+    const rawC = v.celebs || v["착용연예인"] || v.celeb || "";
+    if(rawC && !out.celebs.length){
+      out.celebs = rawC.split(/[,/·]/).map(s=>s.trim()).filter(Boolean).slice(0,3);
+    }
+    if(out.badges.length && out.celebs.length) break;
+  }
+  return out;
+}
+function badgeHTML(badges){
+  return badges.map(k=>{
+    const d = BADGE_DEF[k];
+    if(d) return `<span class="pbadge ${d.cls}">${d.label}</span>`;
+    return `<span class="pbadge b-etc">${k}</span>`;
+  }).join("");
+}
+
+function productInfoFor(name){
+  const key = normalizeForMatch(name);
+  return PRODUCT_INFO_MAP[key] || null;
+}
+
+async function loadProductInfo(){
+  const statusEl = document.getElementById("sync-status2");
+  const textEl = document.getElementById("sync-text2");
+  try{
+    const res = await fetch(PRODUCT_API_URL + "?t=" + Date.now(), {cache:"no-store"});
+    if(!res.ok) throw new Error("응답 오류: " + res.status);
+    const map = await res.json();
+    if(map._meta){
+      const d = map._meta.updated ? new Date(map._meta.updated) : null;
+      if(d && !isNaN(d)){
+        const yy = String(d.getFullYear()).slice(2);
+        const mm = String(d.getMonth()+1).padStart(2,"0");
+        const dd = String(d.getDate()).padStart(2,"0");
+        const verEl = document.querySelector(".edu-ver");
+        if(verEl){
+          const vt = map._meta.visits_total;
+          const visitLine = (vt || vt === 0) ? `<br>👀 ${Number(vt).toLocaleString()}` : "";
+          verEl.innerHTML = `ver4<br>${yy}.${mm}.${dd}${visitLine}`;
+        }
+      }
+      delete map._meta;
+    }
+    PRODUCT_INFO_MAP = map;
+    const rowCount = Object.values(map).reduce((s,arr)=>s+arr.length, 0);
+    statusEl.className = "ok";
+    textEl.textContent = `제품 ${rowCount}건 연결됨`;
+    renderGrid();
+  }catch(err){
+    statusEl.className = "err";
+    textEl.textContent = "제품정보 연결 실패";
+    console.error("제품정보 API 로드 실패", err);
+  }
+}
+
+function parseFolderName(folder){
+  const idx = folder.indexOf("_");
+  if(idx === -1) return {group:"", member:folder, folder};
+  return {group:folder.slice(0,idx), member:folder.slice(idx+1), folder};
+}
+
+function celebByFolder(folder){
+  return LIVE_CELEBS.find(c=>c.folder===folder) || parseFolderName(folder);
+}
+
+// 파일명 끝의 "_1", "-2", "(3)" 같은 중복 구분 접미사를 떼어내 제품명으로 그룹핑
+function baseProductName(name){
+  return name.replace(/[\s_\-]?\(?\d+\)?$/,"").trim() || name;
+}
+
+function buildProductMap(){
+  const map = {};
+  Object.keys(PHOTO_MAP).forEach(folder=>{
+    PHOTO_MAP[folder].forEach(photo=>{
+      const key = baseProductName(photo.name);
+      if(!map[key]) map[key] = [];
+      map[key].push({folder, photo});
+    });
+  });
+  return map;
+}
+
+async function loadPhotos(){
+  const statusEl = document.getElementById("sync-status");
+  const textEl = document.getElementById("sync-text");
+  try{
+    const res = await fetch(API_URL + "?t=" + Date.now(), {cache: "no-store"});
+    if(!res.ok) throw new Error("응답 오류");
+    PHOTO_MAP = await res.json();
+
+    const knownByFolder = {};
+    CELEBS.forEach(c => { knownByFolder[c.folder] = c; });
+    LIVE_CELEBS = Object.keys(PHOTO_MAP).map(folder => knownByFolder[folder] || parseFolderName(folder));
+    const extraFolders = Object.keys(PHOTO_MAP).filter(f => !knownByFolder[f]);
+    PRODUCT_MAP = buildProductMap();
+
+    const total = Object.values(PHOTO_MAP).reduce((s,arr)=>s+arr.length,0);
+    statusEl.className = "ok";
+    textEl.textContent = `${total}장 연결됨` + (extraFolders.length ? ` (신규 ${extraFolders.length}명)` : "");
+  }catch(err){
+    statusEl.className = "err";
+    textEl.textContent = "연결 실패";
+    console.error(err);
+  }
+  renderGrid();
+}
+
+function photosFor(c){ return PHOTO_MAP[c.folder] || []; }
+
+function setMode(m){
+  mode = m;
+  selectedKey = null;
+  query = "";
+  document.getElementById("search").value = "";
+  document.getElementById("tab-celeb").classList.toggle("active", m==="celeb");
+  document.getElementById("tab-product").classList.toggle("active", m==="product");
+  document.getElementById("list-title").textContent = m==="celeb" ? "연예인 (가나다순)" : "제품 (가나다순)";
+  document.getElementById("search").placeholder = m==="celeb" ? "이름 또는 그룹 검색" : "제품명 검색";
+  document.getElementById("detail-empty").style.display = "flex";
+  document.getElementById("detail-content").style.display = "none";
+  renderGrid();
+}
+document.getElementById("tab-celeb").onclick = () => setMode("celeb");
+document.getElementById("tab-product").onclick = () => setMode("product");
+
+function renderGrid(){
+  const grid = document.getElementById("grid");
+  grid.innerHTML = "";
+
+  if(mode === "celeb"){
+    let items = LIVE_CELEBS.slice();
+    if(query.trim()){
+      const q = query.trim().toLowerCase();
+      items = items.filter(c => (c.group+c.member).toLowerCase().includes(q));
+    }
+    items.sort((a,b)=> a.member.localeCompare(b.member, 'ko'));
+    document.getElementById("count").textContent = `${items.length}명`;
+    if(items.length===0){ grid.innerHTML = `<div id="empty">검색 결과가 없습니다.</div>`; return; }
+
+    items.forEach(c=>{
+      const photos = photosFor(c);
+      const row = document.createElement("div");
+      row.className = "row" + (c.folder===selectedKey ? " selected" : "");
+      row.innerHTML = `
+        <span class="names">
+          ${c.group ? `<span class="group">${c.group}</span>` : ""}
+          <span class="member">${c.member}</span>
+        </span>
+        <span class="rmeta">
+          <span class="ccount">${photos.length ? photos.length+"장" : "준비중"}</span>
+          <span class="arrow">›</span>
+        </span>`;
+      row.onclick = () => selectCeleb(c);
+      grid.appendChild(row);
+    });
+  } else {
+    let names = Object.keys(PRODUCT_MAP);
+    if(query.trim()){
+      const q = query.trim().toLowerCase();
+      names = names.filter(n => n.toLowerCase().includes(q));
+    }
+    names.sort((a,b)=> a.localeCompare(b, 'ko'));
+    document.getElementById("count").textContent = `${names.length}개 제품`;
+    if(names.length===0){ grid.innerHTML = `<div id="empty">검색 결과가 없습니다.</div>`; return; }
+
+    names.forEach(name=>{
+      const entries = PRODUCT_MAP[name];
+      const celebCount = new Set(entries.map(e=>e.folder)).size;
+      const row = document.createElement("div");
+      row.className = "row" + (name===selectedKey ? " selected" : "");
+      const extras = productExtras(name);
+      const wornBy = extras.celebs.length ? `<span class="worn-by">(${extras.celebs.join(",")})</span>` : "";
+      row.innerHTML = `
+        <span class="names"><span class="prow">${badgeHTML(extras.badges)}<span class="member">${name}</span></span>${wornBy}</span>
+        <span class="rmeta">
+          <span class="ccount">보기</span>
+          <span class="arrow">›</span>
+        </span>`;
+      row.onclick = () => selectProduct(name);
+      grid.appendChild(row);
+    });
+  }
+}
+
+function openDetailShell(eyebrow, title, meta){
+  document.getElementById("detail-empty").style.display = "none";
+  document.getElementById("detail-content").style.display = "block";
+  document.getElementById("d-eyebrow").textContent = eyebrow;
+  document.getElementById("d-title").textContent = title;
+  document.getElementById("d-meta").textContent = meta;
+  document.getElementById("detail-col").scrollTop = 0;
+}
+
+function selectCeleb(c){
+  selectedKey = c.folder;
+  renderGrid();
+  const photos = photosFor(c);
+  openDetailShell(c.group || "", c.member, `사진 ${photos.length}장`);
+
+  const pg = document.getElementById("photo-grid");
+  pg.innerHTML = "";
+  if(photos.length === 0){
+    pg.innerHTML = `<div class="photo-slot"><span>🖼️</span><span>사진 준비중<br>(${c.folder})</span></div>`;
+  }else{
+    photos.forEach(ph=>{
+      const card = document.createElement("div");
+      card.className = "photo-card";
+      card.innerHTML = `
+        <div class="photo-slot has-photo"><img src="${driveThumb(ph.id,800)}" loading="lazy"></div>
+        <div class="photo-caption">${baseProductName(ph.name)}</div>`;
+      card.querySelector(".photo-slot").onclick = () => openLightbox(driveThumb(ph.id,1600), baseProductName(ph.name));
+      pg.appendChild(card);
+    });
+  }
+}
+
+function selectProduct(name){
+  selectedKey = name;
+  renderGrid();
+  const entries = PRODUCT_MAP[name];
+  const celebCount = new Set(entries.map(e=>e.folder)).size;
+  openDetailShell("제품", name, `${celebCount}명 착용 · 사진 ${entries.length}장`);
+
+  const pg = document.getElementById("photo-grid");
+  pg.innerHTML = "";
+  entries.forEach(e=>{
+    const c = celebByFolder(e.folder);
+    const card = document.createElement("div");
+    card.className = "photo-card";
+    card.innerHTML = `
+      <div class="photo-slot has-photo"><img src="${driveThumb(e.photo.id,800)}" loading="lazy"></div>
+      <div class="photo-caption">${c.member}${c.group ? `<span class="sub">${c.group}</span>` : ""}</div>`;
+    card.querySelector(".photo-slot").onclick = () => openLightbox(driveThumb(e.photo.id,1600), name);
+    pg.appendChild(card);
+  });
+}
+
+function fmtPriceStr(price){
+  if(!price) return "가격 문의";
+  return price.split("/").map(p=>{
+    const n = parseInt(p.replace(/[^0-9]/g,""), 10);
+    return isNaN(n) ? p.trim() : n.toLocaleString() + "원";
+  }).join(" / ");
+}
+
+function openLightbox(url, productName){
+  document.getElementById("lightbox-img").src = url;
+  document.getElementById("lp-name").textContent = productName || "-";
+
+  const wrap = document.getElementById("lp-variants");
+  wrap.innerHTML = "";
+  const variants = productInfoFor(productName);
+  if(!variants){
+    const key = normalizeForMatch(productName);
+    const totalKeys = Object.keys(PRODUCT_INFO_MAP).length;
+    wrap.innerHTML = `<div class="lp-empty">등록된 제품정보가 없습니다.<br>(제품명 매칭 필요)<br><br>
+      <b>진단정보</b><br>
+      찾으려던 키: "${key}"<br>
+      현재 로드된 제품 키 개수: ${totalKeys}${totalKeys===0 ? " (시트 연결 자체가 안 됨)" : ""}</div>`;
+  }else{
+    const rows = variants.map(v => `
+      <tr>
+        <td class="cycle">${v.cycle || "-"}</td>
+        <td>${v.diameter ? v.diameter+"mm" : "-"}</td>
+        <td>${fmtPriceStr(v.price)}</td>
+        <td>${v.pack || "-"}</td>
+      </tr>`).join("");
+    wrap.innerHTML = `
+      <table id="lp-table">
+        <thead><tr><th>주기</th><th>직경</th><th>가격</th><th>개입수</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+  }
+  document.getElementById("lightbox").classList.add("open");
+}
+function closeLightbox(){
+  document.getElementById("lightbox").classList.remove("open");
+  document.getElementById("lightbox-img").src = "";
+}
+document.getElementById("lightbox-close").onclick = closeLightbox;
+document.getElementById("lightbox").addEventListener("click", (e)=>{ if(e.target.id==="lightbox") closeLightbox(); });
+document.getElementById("lightbox-img-wrap").addEventListener("click", closeLightbox);
+
+document.getElementById("search").addEventListener("input", (e)=>{ query = e.target.value; renderGrid(); });
+
+renderGrid();
+loadPhotos();
+loadProductInfo();
+</script>
+</body>
+</html>
